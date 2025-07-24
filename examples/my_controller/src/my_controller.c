@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "app.h"
+#include "log.h"
 #include "math3d.h"
 #include "stabilizer_types.h"
 
@@ -90,26 +91,27 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint, const s
     // Inference RL policy
     networkInference(nn_obs_space, nn_actions);
 
-    // Check if controller should be active
-    if (setpoint->mode.z == modeDisable) {
-        control->thrustSi = 0.0f;
-        control->torqueX = 0.0f;
-        control->torqueY = 0.0f;
-        control->torqueZ = 0.0f;
-    } else {
-        // Process NN output through prePhysicsStep before assigning to control
-        static ControllerConfig cfg = {.thrust_to_weight = 1.9f, .robot_weight = 0.3f, .moment_scale = 0.01f };
-        float thrust;
-        float moment[3];
-        prePhysicsStep(nn_actions[0], &thrust, moment, &cfg);
-        control->thrustSi = thrust;
-        control->torqueX = moment[0];
-        control->torqueY = moment[1];
-        control->torqueZ = moment[2];
-    }
+    // Process NN output through prePhysicsStep before assigning to control
+    static ControllerConfig cfg = {.thrust_to_weight = 1.9f, .robot_weight = 0.3f, .moment_scale = 0.01f };
+    float thrust;
+    float moment[3];
+    prePhysicsStep(nn_actions[0], &thrust, moment, &cfg);
+    control->thrustSi = thrust;
+    control->torqueX = moment[0];
+    control->torqueY = moment[1];
+    control->torqueZ = moment[2];
+
     TickType_t end = xTaskGetTickCount();
 
     if (stabilizerStep % 1000 == 0) { 
+        DEBUG_PRINT("setpoint->mode.x: %d\n", setpoint->mode.x);
+        DEBUG_PRINT("setpoint->mode.y: %d\n", setpoint->mode.y);
+        DEBUG_PRINT("setpoint->mode.z: %d\n", setpoint->mode.z);
+        DEBUG_PRINT("setpoint->mode.roll: %d\n", setpoint->mode.roll);
+        DEBUG_PRINT("setpoint->mode.pitch: %d\n", setpoint->mode.pitch);
+        DEBUG_PRINT("setpoint->mode.yaw: %d\n", setpoint->mode.yaw);
+        DEBUG_PRINT("setpoint->mode.quat: %d\n", setpoint->mode.quat);
+
         DEBUG_PRINT("Exec time: %lu ms\n", (unsigned long)((end - start) * portTICK_PERIOD_MS));
         DEBUG_PRINT("NN output: thrust=%.3f, tx=%.3f, ty=%.3f, tz=%.3f\n",
         (double)nn_actions[0][0], (double)nn_actions[0][1], (double)nn_actions[0][2], (double)nn_actions[0][3]);
@@ -117,3 +119,40 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint, const s
         (double)control->thrustSi, (double)control->torqueX, (double)control->torqueY, (double)control->torqueZ);
     }
 }
+
+
+// Logging
+
+/**
+ * Log variables of OOT controller
+ */
+LOG_GROUP_START(controllerOOT)
+/**
+ * @brief NN Input: angular velocity x (rad/s)
+ */
+LOG_ADD(LOG_FLOAT, ang_vel_x, &nn_obs_space[0][0])
+/**
+ * @brief NN Input: angular velocity y (rad/s)
+ */
+LOG_ADD(LOG_FLOAT, ang_vel_y, &nn_obs_space[0][1])
+/**
+ * @brief NN Input: angular velocity z (rad/s)
+ */
+LOG_ADD(LOG_FLOAT, ang_vel_z, &nn_obs_space[0][2])
+/**
+ * @brief NN output before pre-calculation: thrust
+ */
+LOG_ADD(LOG_FLOAT, thrust, &nn_actions[0][0])
+/**
+ * @brief NN output before pre-calculation: torqueX
+ */
+LOG_ADD(LOG_FLOAT, tx, &nn_actions[0][1])
+/**
+ * @brief NN output before pre-calculation: torqueY
+ */
+LOG_ADD(LOG_FLOAT, ty, &nn_actions[0][2])
+/**
+ * @brief NN output before pre-calculation: torqueZ
+ */
+LOG_ADD(LOG_FLOAT, tz, &nn_actions[0][3])
+LOG_GROUP_STOP(controllerOOT)
