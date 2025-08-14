@@ -331,7 +331,7 @@ FUNC_PREFIX void node__actor_actor_1_1_Elu( const float X[1][64], float Y[1][64]
 	*/
 	for (unsigned i0=0; i0<1; i0++) {
 	for (unsigned i1=0; i1<64; i1++) {
-		Y[i0][i1] = X[i0][i1]>0.0f ? X[i0][i1]: 1.0f*(exp(X[i0][i1])-1.0f);
+		Y[i0][i1] = X[i0][i1]>0.0f ? X[i0][i1]: 1.0f*(expf(X[i0][i1])-1.0f);
 	}
 	}
 }
@@ -368,7 +368,7 @@ FUNC_PREFIX void node__actor_actor_4_Gemm( const float A[1][64], const float B[4
 }
 
 
-void entry(const float tensor_obs[1][7], float tensor_actions[1][4]){
+void networkInference(const float tensor_obs[1][7], float tensor_actions[1][4]){
 	node__normalizer_Sub( tensor_obs, tensor_normalizer__mean, tu0.tensor__normalizer_Sub_output_0);
 	node__normalizer_Div( tu0.tensor__normalizer_Sub_output_0, tensor_onnx__Div_20, tu1.tensor__normalizer_Div_output_0);
 	node__actor_actor_0_Gemm( tu1.tensor__normalizer_Div_output_0, tensor_actor_0_weight, tensor_actor_0_bias, tu0.tensor__actor_actor_0_Gemm_output_0);

@@ -77,7 +77,29 @@ void controllerOutOfTree(control_t *control, const setpoint_t *setpoint, const s
     if (!RATE_DO_EXECUTE(RATE_500_HZ, stabilizerStep)) {
         return;
     }
-    
+
+    // Measure execution rate
+    static TickType_t lastTickCtrl = 0;
+    static uint32_t countCtrl = 0;
+
+    TickType_t nowCtrl = xTaskGetTickCount();
+    countCtrl++;
+
+    if (lastTickCtrl == 0) {
+        lastTickCtrl = nowCtrl;
+    } else if ((nowCtrl - lastTickCtrl) >= pdMS_TO_TICKS(1000)) {
+        // Calculate average period over 1 second
+        float avgPeriodMs = 1000.0f / (float)countCtrl;
+        float freqHz = (float)countCtrl / ((nowCtrl - lastTickCtrl) * portTICK_PERIOD_MS / 1000.0f);
+
+        DEBUG_PRINT("Controller: %.2f ms (%.1f Hz)\n", (double)avgPeriodMs, (double)freqHz);
+
+        // Reset for next measurement
+        countCtrl = 0;
+        lastTickCtrl = nowCtrl;
+    }
+
+
     TickType_t start = xTaskGetTickCount();
     // Build state vector: [ang_vel_x, ang_vel_y, ang_vel_z, , quat_w, quat_x, quat_y, quat_z]
     nn_obs_space[0][0] = radians(sensors->gyro.x);
