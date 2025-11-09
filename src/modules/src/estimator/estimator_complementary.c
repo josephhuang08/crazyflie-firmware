@@ -93,26 +93,26 @@ void estimatorComplementary(state_t *state, const stabilizerStep_t stabilizerSte
   // Update filter
   if (RATE_DO_EXECUTE(ATTITUDE_UPDATE_RATE, stabilizerStep)) {
 
-    // Measure execution rate
-    static TickType_t lastTickEst = 0;
-    static uint32_t countEst = 0;
+    // // Measure execution rate
+    // static TickType_t lastTickEst = 0;
+    // static uint32_t countEst = 0;
 
-    TickType_t nowEst = xTaskGetTickCount();
-    countEst++;
+    // TickType_t nowEst = xTaskGetTickCount();
+    // countEst++;
 
-    if (lastTickEst == 0) {
-        lastTickEst = nowEst;
-    } else if ((nowEst - lastTickEst) >= pdMS_TO_TICKS(1000)) {
-        // Calculate average period over 1 second
-        float avgPeriodMs = 1000.0f / (float)countEst;
-        float freqHz = (float)countEst / ((nowEst - lastTickEst) * portTICK_PERIOD_MS / 1000.0f);
+    // if (lastTickEst == 0) {
+    //     lastTickEst = nowEst;
+    // } else if ((nowEst - lastTickEst) >= pdMS_TO_TICKS(1000)) {
+    //     // Calculate average period over 1 second
+    //     float avgPeriodMs = 1000.0f / (float)countEst;
+    //     float freqHz = (float)countEst / ((nowEst - lastTickEst) * portTICK_PERIOD_MS / 1000.0f);
 
-        DEBUG_PRINT("Estimator: %.2f ms (%.1f Hz)\n", (double)avgPeriodMs, (double)freqHz);
+    //     DEBUG_PRINT("Estimator: %.2f ms (%.1f Hz)\n", (double)avgPeriodMs, (double)freqHz);
 
-        // Reset for next measurement
-        countEst = 0;
-        lastTickEst = nowEst;
-    }
+    //     // Reset for next measurement
+    //     countEst = 0;
+    //     lastTickEst = nowEst;
+    // }
     
 
     sensfusion6UpdateQ(gyro.x, gyro.y, gyro.z,
